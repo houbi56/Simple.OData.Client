@@ -56,6 +56,13 @@ namespace Simple.OData.Client
                 var right = FormatExpression(_right, context);
                 var op = FormatOperator(context);
 
+                if(_operator == ExpressionType.Or &&
+                    _right.Value.GetType().GetInterfaces().Any(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(ICollection<>)) &&
+                    _right.Value.GetType().GetGenericTypeArguments().All(x => x.IsValueType || x == typeof(string)))
+                {
+                    return $"{left} in ({right})";
+                }
+
                 if (context.IsQueryOption)
                 {
                     return $"{left}{op}{right}";

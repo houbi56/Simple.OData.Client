@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -124,6 +125,16 @@ namespace Simple.OData.Client
                     case ExpressionType.MemberAccess:
                         var memberExpression = callExpression.Object as MemberExpression;
                         var arguments = new List<object>();
+
+                        if (callExpression.Method.Name == "Contains" &&
+                            memberExpression.Type.GetInterfaces().Any(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(ICollection<>)) &&
+                            memberExpression.Type.GetGenericTypeArguments().All(x => x.IsValueType || x == typeof(string)))
+                        {
+                            var target = callExpression.Arguments.FirstOrDefault();
+                            var member = ParseMemberExpression(target);
+                            return ParseBinaryExpression(member, ParseMemberExpression(callExpression.Object), Expression.Or(Expression.Constant(true), Expression.Constant(false)));
+                        }
+                        
                         arguments.AddRange(callExpression.Arguments.Select(ParseCallArgumentExpression));
                         return new ODataExpression(
                             ParseMemberExpression(memberExpression), 

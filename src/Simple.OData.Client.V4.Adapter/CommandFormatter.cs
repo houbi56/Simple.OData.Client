@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -23,6 +24,11 @@ namespace Simple.OData.Client.V4.Adapter
                 value = new ODataEnumValue(value.ToString(), _session.Metadata.GetQualifiedTypeName(type.Name));
             if (value is ODataExpression expression)
                 return expression.AsString(_session);
+
+            if (value is ICollection)
+            {
+                return string.Join(",", (value as ICollection).Cast<object>().Where(x => x != null).Select(x => ConvertValueToUriLiteral(x, escapeDataString)));
+            }
 
             var odataVersion = (ODataVersion)Enum.Parse(typeof(ODataVersion), _session.Adapter.GetODataVersionString(), false);
             string ConvertValue(object x) => ODataUriUtils.ConvertToUriLiteral(x, odataVersion, (_session.Adapter as ODataAdapter).Model);
